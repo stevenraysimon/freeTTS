@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Free Text to Speech</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+    <style>
+        @keyframes pulse {
+            0% {
+                color: darkred;
+                opacity: 1;
+            }
+            50% {
+                color: red;
+                opacity: 0.5;
+            }
+            100% {
+                color: darkred;
+                opacity: 1;
+            }
+        }
+        h1{
+            font-family:'Playfair Display', serif;
+            text-align: center;
+        }
+        form{
+            max-width: 1000px;
+            margin:auto;
+            width: 100%;
+            text-align: center;
+        }
+        input[type="submit"]{
+            box-shadow:inset 0px 1px 0px 0px #9acc85;
+            background:linear-gradient(to bottom, #74ad5a 5%, #68a54b 100%);
+            background-color:#74ad5a;
+            border:1px solid #3b6e22;
+            display:inline-block;
+            cursor:pointer;
+            color:#ffffff;
+            font-family:Arial;
+            font-size:13px;
+            font-weight:bold;
+            padding:6px 12px;
+            text-decoration:none;
+        }
+        input[type="submit"]:hover{
+            background:linear-gradient(to bottom, #68a54b 5%, #74ad5a 100%);
+            background-color:#68a54b;
+        }
+        input[type="submit"]:active{
+            position:relative;
+            top:1px;
+        }
+        textarea{
+            width: 100%;
+            height: 300px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        select{
+            width: 100%;
+            margin: 10px;
+            padding: 10px;
+            max-width: 200px;
+        }
+        #status {
+            text-align: center;
+            font-weight: bold;
+            margin-top: 20px;
+            font-family:'Playfair Display', serif;
+        }
+
+        #status.computing {
+            animation: pulse 1.5s infinite;
+        }
+
+        #status.downloaded {
+            color: darkblue;
+            animation: none;
+        }
+        #filename {
+            width: 100%;
+            max-width: 200px;
+            margin: 10px;
+            padding: 10px;
+        }
+        #progress-bar {
+            width: 100%;
+            background-color: #eee;
+            border-radius: 40px;
+            max-width: 300px;
+            margin:10px auto;
+        }
+        #progress {
+            width: 0%;
+            height: 30px;
+            background-color: #4CAF50;
+            text-align: center;
+            line-height: 30px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Free Text to Speech</h1>
+    <form id="ttsForm" method="post">
+        <textarea name="text" rows="4" cols="50" placeholder="Enter text here..."></textarea><br>
+        <select name="voice">
+            {% for key, value in voices.items() %}
+                <option value="{{ key }}">{{ value.name }}</option>
+            {% endfor %}
+        </select><br>
+        <input type="text" id="filename" name="filename" placeholder="Enter file name (without .wav)" required><br>
+        <input type="submit" value="Convert to Speech">
+    </form>
+    <!-- <div id="progress-bar">
+        <div id="progress"></div>
+    </div> -->
+    <div id="status"></div>
+    <script>
+        document.getElementById('ttsForm').onsubmit = function(e) {
+            e.preventDefault();
+            
+            var statusDiv = document.getElementById('status');
+            statusDiv.textContent = 'Creating Speech...';
+            statusDiv.className = 'computing';
+
+            var formData = new FormData(this);
+
+            fetch('/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                var url = window.URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = formData.get('filename') + '.wav';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                statusDiv.textContent = 'Downloaded';
+                statusDiv.className = 'downloaded';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                statusDiv.textContent = 'Error occurred';
+                statusDiv.className = '';
+            });
+        };
+    </script>
+</body>
+</html>
